@@ -1,0 +1,8 @@
+# English→Urdu Neural Machine Translation - Generative AI Assignment Question 1
+# This file contains all prompts used for Question 01 to accomplish the NMT pipeline.
+
+PROMPT 1:
+"So this is the assignment of the generative ai and you have to first solve the question no 01 with very high detail and mention each and every thing also you have to give me the code as well https://github.com/noumanic/ENG-URDU-NMT-RNN.git this is the repo of my friend also so you can also get the help from there and also i have to push these things on the github as well so for that you know make the separrate folder where you can do all these work for the question 01 and also name the folder as per the problme and you have to solve the problems ther and place the files there and also like in a very good and appropiate way  so do that split in the tasks and start working on them do consider the rubric as well i have placed that also"
+
+PROMPT 2:
+"also do the ood statistics for the data as well for this question"

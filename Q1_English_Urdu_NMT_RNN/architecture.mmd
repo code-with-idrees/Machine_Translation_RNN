@@ -1,0 +1,42 @@
+flowchart TB
+  subgraph INPUT["  "]
+    SRC["Source Tokens\n(English Sentence)"]
+  end
+
+  subgraph ENC["RNN Encoder"]
+    E1["Embedding\n(vocab × embed_dim)"]
+    E2["Dropout (p=0.3)"]
+    E3["Stacked Vanilla RNN\n(tanh, 2 layers)"]
+    E4["Context Vector h_T\n(hidden_dim)"]
+    E1 --> E2 --> E3 --> E4
+  end
+
+  subgraph DECODE["RNN Decoder (Teacher Forcing)"]
+    D1["Embedding\n(vocab × embed_dim)"]
+    D2["Dropout (p=0.3)"]
+    D3["Stacked Vanilla RNN\n(tanh, 2 layers)"]
+    D4["Linear Layer\n(hidden_dim → tgt_vocab)"]
+    D5["Softmax → Logits"]
+    D1 --> D2 --> D3 --> D4 --> D5
+  end
+
+  subgraph OUTPUT["  "]
+    TGT["Target Tokens\n(Urdu Translation)"]
+  end
+
+  SRC --> E1
+  E4 --> D3
+  E4 -.- D1
+  D5 --> TGT
+
+  classDef inputNode  fill:#00695C,stroke:#000000,stroke-width:3px,color:#FFFFFF,font-weight:bold
+  classDef encNode    fill:#1565C0,stroke:#000000,stroke-width:3px,color:#FFFFFF,font-weight:bold
+  classDef contextNode fill:#FF6F00,stroke:#000000,stroke-width:3px,color:#FFFFFF,font-weight:bold
+  classDef decNode    fill:#6A1B9A,stroke:#000000,stroke-width:3px,color:#FFFFFF,font-weight:bold
+  classDef outputNode fill:#BF360C,stroke:#000000,stroke-width:3px,color:#FFFFFF,font-weight:bold
+
+  class SRC inputNode
+  class E1,E2,E3 encNode
+  class E4 contextNode
+  class D1,D2,D3,D4,D5 decNode
+  class TGT outputNode

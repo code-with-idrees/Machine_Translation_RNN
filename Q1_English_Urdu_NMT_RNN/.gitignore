@@ -1,0 +1,46 @@
+# Python / IPython
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Datasets (large files tracked via Git LFS or not tracked)
+data/*.xlsx
+data/*.csv
+
+# Generated outputs (re-created by running the notebook)
+outputs/plots/*.png
+outputs/results/*.csv
+outputs/results/*.pkl
+outputs/checkpoints/*.pt
+
+# Temp / logs
+*.log
+*.tmp
+generate_final_outputs.py
+append_script.py
+task.md
