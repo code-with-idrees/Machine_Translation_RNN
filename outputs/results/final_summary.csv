@@ -1,0 +1,27 @@
+Metric,Value
+Raw sentence pairs,"9,103"
+After all cleaning,"8,542"
+Train / Val / Test,"6,823 / 864 / 855"
+English vocab size,"3,821"
+Urdu vocab size,"4,094"
+Min token frequency,2
+Architecture,Vanilla RNN Encoder-Decoder (tanh)
+Embedding dim,128
+Hidden dim,256
+RNN layers,1
+Dropout,0.2
+Label smoothing ε,0.1
+Total parameters,"2,262,910"
+Epochs trained,2
+Best epoch,2
+Best val loss,4.4472
+Best val PPL,85.39
+Greedy BLEU-1,9.746
+Greedy BLEU-4,0.399
+Beam-4 BLEU-1,4.377
+Beam-4 BLEU-4,0.183
+OOD BLEU-4,0.088
+ID  BLEU-4,0.207
+BLEU-4 drop (ID→OOD),+0.119
+Most common error,Severe Under-generation
+Acceptable translations,0.0%

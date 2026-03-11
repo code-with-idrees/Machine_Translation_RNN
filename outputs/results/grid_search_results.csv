@@ -1,0 +1,2 @@
+config,embed_dim,hidden_dim,n_layers,lr,dropout,batch_size,best_val_loss,best_val_ppl,n_params,avg_epoch_time,rank
+1,128,256,1,0.001,0.2,64,4.95061,141.262,2262910,29.19,1
