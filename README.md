@@ -709,7 +709,7 @@ This is the maximum-likelihood degenerate solution when the context vector `h_T`
 ### 📊 Plot 11 — Final Dashboard
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/11_final_dashboard.png" width="950" alt="Final Experiment Dashboard"/>
+  <img src="outputs/plots/11_final_dashboard.png" width="950" alt="Final Experiment Dashboard"/>
 </p>
 
 > **What this shows:** 4-panel consolidated dashboard — train/val loss curves with best-epoch marker; corpus BLEU-1 to BLEU-4 for greedy and beam-4; sentence BLEU density distribution; error-type pie chart.
