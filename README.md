@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white"/>
   <img src="https://img.shields.io/badge/CUDA-12.8-76B900?style=for-the-badge&logo=nvidia&logoColor=white"/>
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Assignment-Generative%20AI%20%231-blueviolet?style=for-the-badge"/>
 </p>
 
 <p align="center">
@@ -18,20 +19,19 @@
 
 - [Overview](#-overview)
 - [Project Structure](#-project-structure)
-- [Model Architecture](#-model-architecture-vanilla-rnn-encoderdecoder)
+- [Model Architecture](#-model-architecture)
 - [Setup & Execution](#-setup--execution)
-- [Pipeline Walkthrough & Results](#-pipeline-walkthrough--results)
-  - [Section 1 — Environment Setup](#1️⃣-section-1--environment-setup)
-  - [Section 2 — Data Loading & Exploration](#2️⃣-section-2--data-loading--exploration)
-  - [Section 3 — Data Preprocessing](#3️⃣-section-3--data-preprocessing)
-  - [Section 4 — Train/Val/Test Split](#4️⃣-section-4--trainvaltest-split)
-  - [Section 5 — Tokenisation & Vocabulary](#5️⃣-section-5--tokenisation--vocabulary)
-  - [Section 6 — Batching & Padding](#6️⃣-section-6--batching--padding)
-  - [Section 7 — Model Architecture](#7️⃣-section-7--model-architecture)
-  - [Section 8 — Training Dynamics](#8️⃣-section-8--training-dynamics)
-  - [Section 9 — Hyperparameter Grid Search](#9️⃣-section-9--hyperparameter-grid-search)
-  - [Section 10 — Inference & BLEU Evaluation](#-section-10--inference--bleu-evaluation)
-  - [Section 11 — Error Analysis & Discussion](#️-section-11--error-analysis--discussion)
+- [Section 1 — Environment Setup](#1️⃣-section-1--environment-setup)
+- [Section 2 — Data Loading & Exploration](#2️⃣-section-2--data-loading--exploration)
+- [Section 3 — Data Preprocessing](#3️⃣-section-3--data-preprocessing)
+- [Section 4 — Train / Val / Test Split](#4️⃣-section-4--train--val--test-split)
+- [Section 5 — Tokenisation & Vocabulary](#5️⃣-section-5--tokenisation--vocabulary)
+- [Section 6 — Batching & Padding](#6️⃣-section-6--batching--padding)
+- [Section 7 — Model Summary](#7️⃣-section-7--model-summary)
+- [Section 8 — Training Dynamics](#8️⃣-section-8--training-dynamics)
+- [Section 9 — Hyperparameter Grid Search](#9️⃣-section-9--hyperparameter-grid-search)
+- [Section 10 — Inference & BLEU Evaluation](#-section-10--inference--bleu-evaluation)
+- [Section 11 — Error Analysis & Discussion](#️-section-11--error-analysis--discussion)
 - [Final Experiment Summary](#-final-experiment-summary)
 - [Generated Artifacts](#-generated-artifacts)
 
@@ -39,22 +39,20 @@
 
 ## 🧭 Overview
 
-This repository was built for **Generative AI Assignment #1** and implements the **entire NMT pipeline from scratch**, adhering strictly to the constraint of using only `torch.nn.RNN` (plain vanilla RNN, `tanh` activations) — no gating mechanisms, no attention.
+This project implements the **entire NMT pipeline from scratch**, adhering strictly to the constraint of plain `torch.nn.RNN` only — no gating, no attention. The goal is to empirically quantify the architectural limitations of vanilla RNNs on a morphologically rich, verb-final (SOV) target language.
 
-The goal is to isolate and empirically quantify the architectural limitations of vanilla RNNs on a morphologically rich, SOV-order target language (Urdu).
-
-**Key outcomes at a glance:**
+**At a glance:**
 
 | Metric | Value |
 |---|---|
-| Dataset size (after cleaning) | **8,542** pairs |
-| English vocab size | **3,821** tokens |
-| Urdu vocab size | **4,094** tokens |
-| Total model parameters | **4,914,942** (19.66 MB) |
-| Best validation perplexity | **41.34** (epoch 10) |
+| Dataset (after cleaning) | **8,542** pairs |
+| English vocab | **3,821** tokens |
+| Urdu vocab | **4,094** tokens |
+| Total parameters | **4,914,942** (19.66 MB) |
+| Best validation PPL | **41.34** @ epoch 10 |
 | Greedy BLEU-1 / BLEU-4 | **21.03** / **0.90** |
 | Beam-4 BLEU-1 / BLEU-4 | **12.47** / **0.96** |
-| Most common error | Complete Hallucination (65.7%) |
+| Dominant error | Complete Hallucination — **65.7%** |
 
 ---
 
@@ -65,43 +63,81 @@ ENG-URDU-NMT-RNN/
 ├── data/
 │   └── english_to_urdu_dataset.xlsx       # Raw parallel corpus (9,103 pairs)
 ├── notebooks/
-│   ├── dataset_statistics.ipynb           # EDA, OOD & dataset statistical analysis
+│   ├── dataset_statistics.ipynb           # EDA, OOD & statistical analysis
 │   └── english_to_urdu_nmt.ipynb          # Full NMT pipeline (Sections 1–11)
 ├── outputs/
 │   ├── checkpoints/
-│   │   └── best_model.pt                  # Saved checkpoint (epoch 10)
-│   ├── plots/                             # 11 comprehensive evaluation figures
-│   └── results/                           # CSV reports & pickled vocabularies
+│   │   └── best_model.pt                  # Best checkpoint (epoch 10)
+│   ├── plots/                             # 11 evaluation figures (PNG)
+│   └── results/                           # CSV reports + pickled vocabularies
 ├── src/
-│   └── english_to_urdu_nmt.py             # Standalone Python version
+│   └── english_to_urdu_nmt.py             # Standalone Python script
 ├── LNCS_Report/                           # Springer LNCS LaTeX report
 ├── images/
 │   ├── 06a_rnn_encoder_decoder.png        # Architecture diagram
-│   └── 06b_context_vector.svg             # Context vector diagram
-├── architecture.mmd                       # Mermaid diagram of Seq2Seq model
+│   └── 06b_context_vector.svg             # Context vector SVG
+├── architecture.mmd                       # Mermaid diagram source
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## 🧠 Model Architecture (Vanilla RNN Encoder–Decoder)
+## 🧠 Model Architecture
 
-The model is a classic **Seq2Seq** architecture using two symmetric vanilla RNN stacks. No attention, no gating.
+### Architecture Diagram
 
 <p align="center">
-  <img src="images/06a_rnn_encoder_decoder.png" width="420" alt="RNN Encoder-Decoder Architecture"/>
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/images/06a_rnn_encoder_decoder.png" width="430" alt="Vanilla RNN Encoder-Decoder Architecture"/>
 </p>
 
-**How it works:**
+<p align="center"><em>Vanilla RNN Encoder–Decoder. The encoder compresses the full English sentence into a single context vector <code>h_T</code>, which initialises the decoder to generate Urdu tokens one-by-one.</em></p>
 
-1. **Encoder** reads the English sentence token-by-token, updating a hidden state at each step using `tanh`. The final hidden state `h_T` becomes the **Context Vector** — a single fixed-size vector compressing the entire source sentence.
-2. **Context Vector** `h_T` is passed as the initial hidden state of the decoder.
-3. **Decoder** generates the Urdu translation one token at a time. **Teacher forcing** is used during training.
+### Mermaid Diagram
 
-**Encoder recurrence:**  `h_t = tanh(W_ih · x_t + W_hh · h_(t-1) + b)`
+```mermaid
+flowchart TD
+    subgraph ENC["🔷 RNN ENCODER"]
+        A([Source Tokens\nEnglish Sentence]):::input
+        B[Embedding\nvocab × embed_dim]:::blue
+        C[Dropout\np=0.2]:::blue
+        D[Vanilla RNN\ntanh · 1 layer · hidden=512]:::darkblue
+        E([Context Vector  h_T\nshape: 1 × B × 512]):::orange
+        A --> B --> C --> D --> E
+    end
 
-**Parameter Breakdown (best config: emb=256, hid=512, L=1, drop=0.2):**
+    subgraph DEC["🔶 RNN DECODER  —  Teacher Forcing"]
+        F[Embedding\nvocab × embed_dim]:::purple
+        G[Dropout\np=0.2]:::purple
+        H[Vanilla RNN\ntanh · 1 layer · hidden=512]:::darkpurple
+        I[Linear  512 → tgt_vocab]:::purple
+        J([Target Tokens\nUrdu Sentence]):::output
+        F --> G --> H --> I --> J
+    end
+
+    E -->|"initialise\nhidden state"| H
+
+    classDef input    fill:#1abc9c,stroke:#0e8c6a,color:#fff,font-weight:bold
+    classDef blue     fill:#3498db,stroke:#1a6fa3,color:#fff
+    classDef darkblue fill:#2471a3,stroke:#1a5276,color:#fff,font-weight:bold
+    classDef orange   fill:#e67e22,stroke:#b35a00,color:#fff,font-weight:bold
+    classDef purple   fill:#9b59b6,stroke:#6c3483,color:#fff
+    classDef darkpurple fill:#7d3c98,stroke:#5b2c6f,color:#fff,font-weight:bold
+    classDef output   fill:#e74c3c,stroke:#a93226,color:#fff,font-weight:bold
+```
+
+### How It Works
+
+| Step | Component | Detail |
+|---|---|---|
+| 1 | **Encoder Embedding** | Maps each English token → 256-dim dense vector |
+| 2 | **Encoder RNN** | `h_t = tanh(W_ih·x_t + W_hh·h_{t-1} + b)` — updates hidden state token-by-token |
+| 3 | **Context Vector** | Final hidden state `h_T` (512-dim) — the *only* information passed to decoder |
+| 4 | **Decoder Embedding** | Maps previous Urdu token → 256-dim vector |
+| 5 | **Decoder RNN** | Conditioned on `h_T`, generates next hidden state |
+| 6 | **Output Projection** | Linear 512 → 4094 + softmax → next Urdu token |
+
+### Parameter Breakdown
 
 | Component | Parameters | Size (MB) |
 |---|---|---|
@@ -109,214 +145,308 @@ The model is a classic **Seq2Seq** architecture using two symmetric vanilla RNN 
 | Encoder RNN (1 layer) | 920,064 | 3.68 |
 | Decoder Embedding (4094 × 256) | 1,048,064 | 4.19 |
 | Decoder RNN (1 layer) | 920,064 | 3.68 |
-| Output Projection (512 → 4094) | 2,096,382 | 8.39 |
+| Output Projection (512 → 4094) | **2,096,382** | **8.39** |
 | **Total** | **4,914,942** | **19.66** |
 
-> **Weight initialisation:** Input-hidden → Xavier uniform. Recurrent weights → Orthogonal. Biases → Zero. Padding embeddings → Fixed at zero.
+> Output projection dominates at **42.7%** of all parameters — a direct consequence of the large Urdu vocabulary.
 
 ---
 
 ## 🚀 Setup & Execution
 
-### 1. Create and activate a virtual environment
-
 ```bash
+# 1. Clone
+git clone https://github.com/code-with-idrees/Machine_Translation_RNN.git
+cd Machine_Translation_RNN
+
+# 2. Virtual environment
 python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # Linux / macOS
-```
+source .venv/bin/activate          # Linux/macOS
+# .venv\Scripts\activate           # Windows
 
-### 2. Install dependencies
-
-```bash
+# 3. Install dependencies
 pip install -r requirements.txt
+
+# 4. Place dataset
+#    Put english_to_urdu_dataset.xlsx inside data/
+
+# 5a. Run EDA notebook
+jupyter notebook notebooks/dataset_statistics.ipynb
+
+# 5b. Run full NMT pipeline
+jupyter notebook notebooks/english_to_urdu_nmt.ipynb
+
+# 5c. Or run as a script
+python src/english_to_urdu_nmt.py
 ```
 
-### 3. Place the dataset
-
-Put `english_to_urdu_dataset.xlsx` (columns: `eng`, `urdu`) at `data/english_to_urdu_dataset.xlsx`.
-
-### 4. Run the notebooks
-
-- **EDA:** `notebooks/dataset_statistics.ipynb`
-- **Full pipeline:** `notebooks/english_to_urdu_nmt.ipynb` — run all cells sequentially. Auto-detects GPU and creates `outputs/`.
-
-> Tested on NVIDIA Tesla T4 (15.64 GB) and RTX 4060 Laptop (8 GB).
+> Tested on **NVIDIA Tesla T4 (15.64 GB VRAM)** and **RTX 4060 Laptop (8 GB)**. The pipeline auto-detects GPU and falls back to CPU.
 
 ---
 
-## 📖 Pipeline Walkthrough & Results
+## 1️⃣ Section 1 — Environment Setup
 
----
-
-### 1️⃣ Section 1 — Environment Setup
-
-All random seeds locked (`SEED=42`) for deterministic reproducibility.
+All random seeds locked (`SEED = 42`) across PyTorch, NumPy, and Python for full deterministic reproducibility.
 
 ```
-  Python        : 3.12.12        PyTorch  : 2.10.0+cu128
-  Device        : cuda           GPU      : Tesla T4
-  VRAM (GB)     : 15.64          CUDA     : 12.8
+  Python     : 3.12.12          PyTorch    : 2.10.0+cu128
+  NumPy      : 2.0.2            Pandas     : 2.2.2
+  Device     : cuda             GPU        : Tesla T4
+  VRAM (GB)  : 15.64            CUDA       : 12.8
   ✅  Environment ready.
 ```
 
 ---
 
-### 2️⃣ Section 2 — Data Loading & Exploration
+## 2️⃣ Section 2 — Data Loading & Exploration
 
 ```
-  Shape : (9103, 2)   |   Total pairs : 9,103   |   Memory : 3.76 MB
-  Missing values  →  urdu: 1,  eng: 0
+  Shape   : (9103, 2)   |   Columns : ['eng', 'urdu']
+  Pairs   : 9,103       |   Memory  : 3.76 MB
+
+  Missing values  →  eng: 0,  urdu: 1
   Full duplicate rows : 9  (0.10%)
 ```
 
 **Raw corpus statistics:**
 
-| | English | Urdu |
+| Metric | English | Urdu |
 |---|---|---|
 | Total tokens | 187,636 | 210,640 |
 | Unique tokens | 7,156 | 8,111 |
-| Mean length | 20.61 | 23.14 |
-| Std | 9.70 | 10.63 |
+| Type–token ratio | 0.0381 | 0.0385 |
+| Mean length (tokens) | 20.61 | 23.14 |
+| Std dev | 9.70 | 10.63 |
+| Median length | 20 | 23 |
 | Max length | 68 | 84 |
-| Length ratio (Urdu/Eng) | **1.161 ± 0.268** | |
+| Mean length ratio (Urdu/Eng) | **1.161 ± 0.268** | |
 
-<p align="center">
-  <img src="outputs/plots/01_corpus_exploration.png" width="900" alt="Corpus Exploration"/>
-</p>
+**Top-15 English tokens:** `the (11180)` · `and (10750)` · `of (6167)` · `that (3820)` · `to (3581)` · `he (3108)` · `in (2990)` · `him (2484)` · `unto (2447)` · `for (2321)` · `is (2261)` · `i (2185)` · `not (2101)` · `a (2062)` · `they (1969)`
 
-> Length histograms, Urdu/English length-ratio distribution, Eng vs Urdu scatter coloured by ratio, and top-20 token frequency bar charts.
+**Top-15 Urdu tokens:** `۔ (9633)` · `اور (8698)` · `کے (6324)` · `سے (6022)` · `میں (5853)` · `اس (5691)` · `کی (4224)` · `ہے (4214)` · `نے (3946)` · `کو (3702)` · `کہ (3562)` · `وہ (2790)` · `تو (2320)` · `کا (2234)` · `جو (2153)`
 
 ---
 
-### 3️⃣ Section 3 — Data Preprocessing
+### 📊 Plot 01 — Corpus Exploration
 
-**English pipeline:** Lowercasing → URL removal → Unicode normalisation → punctuation collapsing → whitespace normalisation.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/01_corpus_exploration.png" width="950" alt="Corpus Exploration"/>
+</p>
 
-**Urdu pipeline:** Urdu punctuation mapping (`۔→.` `،→,` `؟→?`) → zero-width character removal → bracketed annotation stripping.
+> **What this shows:** English and Urdu sentence-length histograms; Urdu/English length-ratio distribution; scatter of Eng vs Urdu lengths coloured by ratio; length box-plots; top-20 English token frequency bar chart (log scale).
+
+---
+
+## 3️⃣ Section 3 — Data Preprocessing
+
+Two dedicated cleaning pipelines are applied before any filtering.
+
+**English pipeline:**
+Lowercasing → URL/email stripping → Unicode NFKC normalisation → repeated-punctuation collapsing → whitespace normalisation.
+
+**Urdu pipeline:**
+Urdu punctuation mapping (`۔→.` · `،→,` · `؟→?`) → zero-width character removal → bracketed annotation stripping → Urdu-script ratio check.
 
 **Sequential quality filters:**
 
-| Filter Stage | Rows Removed | Reason |
+| Filter | Rows Removed | Reason |
 |---|---|---|
-| Null removal | −19 | Missing values after cleaning |
+| Null removal | −19 | Empty after cleaning |
 | Exact deduplication | −9 | Full duplicate rows |
 | Urdu script ratio < 40% | −1 | Non-Urdu content |
-| Length cap at 97th pct (40/44 tokens) | −361 | Outlier-length sequences |
-| Length-ratio filter [0.67, 2.20] | −171 | Extreme length asymmetry |
-| **Final dataset** | **8,542 pairs** | **93.8% retained** |
+| Length cap at 97th pct (≤40 / ≤44 tokens) | −361 | GPU-memory outliers |
+| Length-ratio filter [0.67 – 2.20] | −171 | Extreme length asymmetry |
+| **Final corpus** | **8,542 pairs** | **93.8% retained** |
 
-<p align="center">
-  <img src="outputs/plots/02_preprocessing_analysis.png" width="900" alt="Preprocessing Analysis"/>
-</p>
+```
+  97th pct English length : 40 tokens
+  97th pct Urdu length    : 44 tokens
+  Ratio bounds            : [0.67 , 2.20]
+  💾  Saved: outputs/results/cleaned_dataset.csv
+```
 
-> Before/after length distributions, Urdu script-ratio histogram with threshold line, and dataset-size funnel across all filter stages.
+**5 cleaned samples:**
+```
+ENG : they say unto him why did moses then command to give a writing of divorcement
+URDU: انہوں نے اس سے کہا پھر موسی نے کیوں حکم دیا ہے کہ طلاقنامہ دے کر چھوڑ دی جائے
+
+ENG : tom can fix the heater.
+URDU: ٹام ہیٹر ٹھیک کر سکتا ہے.
+
+ENG : my mother has made me what i am today.
+URDU: میں آج جو کچھ ہوں, اپنی ماں کی وجہ سے ہوں.
+```
 
 ---
 
-### 4️⃣ Section 4 — Train/Val/Test Split
+### 📊 Plot 02 — Preprocessing Analysis
 
-Stratified split on 5 quantile bins of source sentence length. Fixed `random_state=42`. Zero overlap verified programmatically.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/02_preprocessing_analysis.png" width="950" alt="Preprocessing Analysis"/>
+</p>
 
-| Split | Pairs | % | Eng μ±σ | Urdu μ±σ |
+> **What this shows:** English/Urdu length distributions before and after filtering; Urdu script-ratio histogram with the 40% threshold line; cleaned length-ratio histogram; Eng vs Urdu length scatter coloured by script ratio; dataset-size funnel tracking rows removed at each filter stage.
+
+---
+
+## 4️⃣ Section 4 — Train / Val / Test Split
+
+Stratified split on 5 quantile bins of source-sentence length. Fixed `random_state = 42`. Zero overlap verified programmatically after splitting.
+
+| Split | Pairs | % | Eng μ ± σ | Urdu μ ± σ |
 |---|---|---|---|---|
-| Train | 6,823 | 79.9% | 19.9 ± 8.6 | 22.5 ± 9.3 |
-| Validation | 864 | 10.1% | 19.7 ± 8.7 | 22.4 ± 9.5 |
-| Test | 855 | 10.0% | 19.7 ± 8.6 | 22.4 ± 9.2 |
+| **Train** | 6,823 | 79.9% | 19.9 ± 8.6 | 22.5 ± 9.3 |
+| **Validation** | 864 | 10.1% | 19.7 ± 8.7 | 22.4 ± 9.5 |
+| **Test** | 855 | 10.0% | 19.7 ± 8.6 | 22.4 ± 9.2 |
 
 ```
-  Overlap Train ∩ Val  : 0  ✅     Overlap Train ∩ Test : 0  ✅     Overlap Val ∩ Test : 0  ✅
+  Overlap Train ∩ Val  : 0  ✅
+  Overlap Train ∩ Test : 0  ✅
+  Overlap Val  ∩ Test  : 0  ✅
+  ✅  Zero data leakage confirmed across all three splits.
 ```
-
-<p align="center">
-  <img src="outputs/plots/03_dataset_split.png" width="900" alt="Dataset Split"/>
-</p>
-
-> Split proportions pie chart and per-split English/Urdu length density curves — all three splits show near-identical distributions.
 
 ---
 
-### 5️⃣ Section 5 — Tokenisation & Vocabulary
-
-Word-level tokenisation. Vocabularies built from **training set only** with `min_freq = 2`.
-
-| Token | Index | | Metric | ENG | URDU |
-|---|---|---|---|---|---|
-| `<pad>` | 0 | | Vocab size | **3,821** | **4,094** |
-| `<bos>` | 1 | | Singletons excluded | 2,372 | 2,869 |
-| `<eos>` | 2 | | Val OOV rate | 3.42% | 3.44% |
-| `<unk>` | 3 | | Test OOV rate | 3.35% | 3.21% |
+### 📊 Plot 03 — Dataset Split
 
 <p align="center">
-  <img src="outputs/plots/04_vocabulary_analysis.png" width="900" alt="Vocabulary Analysis"/>
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/03_dataset_split.png" width="950" alt="Dataset Split"/>
 </p>
 
-> Zipf distributions (log-log scale), top-30 token bar charts for both languages, and cumulative coverage curves with 80/90/95% markers.
+> **What this shows:** Proportions pie chart; English token-length density per split; Urdu token-length density per split. All three distributions are near-identical, confirming successful stratification.
 
 ---
 
-### 6️⃣ Section 6 — Batching & Padding
+## 5️⃣ Section 5 — Tokenisation & Vocabulary
 
-Dynamic padding to batch maximum length. Decoder input (`tgt_in`) is teacher-forced ground-truth; label (`tgt_out`) is shifted left.
+Word-level tokenisation (whitespace split after normalisation). Vocabularies built from **training set only** (`min_freq = 2`) to prevent leakage.
+
+**Special tokens:**
+
+| Token | Index | Role |
+|---|---|---|
+| `<pad>` | 0 | Sequence padding |
+| `<bos>` | 1 | Begin-of-sentence (decoder input start) |
+| `<eos>` | 2 | End-of-sentence (generation stop) |
+| `<unk>` | 3 | Out-of-vocabulary token |
 
 ```
-  Train batches : 107   Val batches : 14   Test batches : 14   Batch size : 64
-
-  src     shape : torch.Size([64, 39])    src    padding : 48.9%
-  tgt_in  shape : torch.Size([64, 45])    tgt_in padding : 49.1%
+  English (source) vocab size       : 3,821   (singletons excluded: 2,372)
+  Urdu    (target) vocab size       : 4,094   (singletons excluded: 2,869)
+  Min frequency threshold           : 2
 ```
 
-<p align="center">
-  <img src="outputs/plots/05_batch_structure.png" width="900" alt="Batch Structure"/>
-</p>
+**OOV analysis:**
 
-> Source token-ID heatmap, padding mask (red = `<pad>`), and sequence length histogram within a sample batch.
+| Split | ENG OOV tokens | ENG OOV rate | URDU OOV tokens | URDU OOV rate |
+|---|---|---|---|---|
+| Validation | 582 / 16,993 | **3.42%** | 666 / 19,334 | **3.44%** |
+| Test | 564 / 16,846 | **3.35%** | 613 / 19,112 | **3.21%** |
+
+Top OOV (val ENG): `college (5)` · `train (4)` · `wherever (4)` · `want. (4)` · `diseases (3)`
 
 ---
 
-### 7️⃣ Section 7 — Model Architecture
+### 📊 Plot 04 — Vocabulary Analysis
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/04_vocabulary_analysis.png" width="950" alt="Vocabulary Analysis"/>
+</p>
+
+> **What this shows:** Zipf distributions (log–log scale) for both vocabularies; top-30 token bar charts (English & Urdu); cumulative coverage curves with 80 / 90 / 95% markers; English token frequency-bin histogram showing the long tail of singletons.
+
+---
+
+## 6️⃣ Section 6 — Batching & Padding
+
+- **Source:** Each English sentence encoded with terminal `<eos>`.
+- **Target:** Urdu sentences bookended with `<bos>` and `<eos>`. Decoder input (`tgt_in`) is right-shifted; labels (`tgt_out`) are left-shifted.
+- **Padding:** Dynamic — sequences padded to the **batch maximum** length, not a global maximum. This significantly reduces wasted computation.
+
+```
+  Train batches : 107   |   Val batches : 14   |   Test batches : 14
+  Batch size    : 64
+
+  src     shape : torch.Size([64, 39])    →  src    padding ratio : 48.9%
+  tgt_in  shape : torch.Size([64, 45])    →  tgt_in padding ratio : 49.1%
+  tgt_out shape : torch.Size([64, 45])
+
+  Teacher-forcing check:
+    tgt_in  first token = BOS (1)  ✅
+    tgt_out last  token = EOS (2) or <pad>  ✅
+```
+
+---
+
+### 📊 Plot 05 — Batch Structure
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/05_batch_structure.png" width="950" alt="Batch Structure"/>
+</p>
+
+> **What this shows:** Source token-ID heatmap (first 16 samples in a batch); padding mask visualisation (red cells = `<pad>` positions); source sequence length histogram within the batch.
+
+---
+
+## 7️⃣ Section 7 — Model Summary
 
 ```
 Seq2Seq(
   (encoder): RNNEncoder(
     (embedding): Embedding(3821, 256, padding_idx=0)
-    (dropout):   Dropout(p=0.2)
+    (dropout):   Dropout(p=0.2, inplace=False)
     (rnn):       RNN(256, 512, num_layers=1, batch_first=True)
   )
   (decoder): RNNDecoder(
     (embedding): Embedding(4094, 256, padding_idx=0)
-    (dropout):   Dropout(p=0.2)
+    (dropout):   Dropout(p=0.2, inplace=False)
     (rnn):       RNN(256, 512, num_layers=1, batch_first=True)
     (fc_out):    Linear(in_features=512, out_features=4094, bias=True)
   )
 )
-  Total parameters : 4,914,942   |   Model size : 19.66 MB (float32)   |   Device : cuda:0
-  ✅  Forward pass OK.  Output logits shape : (4, 10, 4094)
+
+  Encoder parameters  : 1,897,728
+  Decoder parameters  : 3,017,214
+  Total parameters    : 4,914,942   (19.66 MB · float32)
+  Device              : cuda:0
+
+  Forward pass sanity check:
+    Input  src    : (4, 12)
+    Input  tgt_in : (4, 10)
+    Output logits : (4, 10, 4094)  ✅
 ```
-
-<p align="center">
-  <img src="outputs/plots/06_model_architecture.png" width="700" alt="Model Architecture"/>
-</p>
-
-> Parameter breakdown — pie chart (% share per component) and bar chart (absolute counts). Output projection dominates at 42.7% owing to the large target vocabulary.
 
 ---
 
-### 8️⃣ Section 8 — Training Dynamics
+### 📊 Plot 06 — Model Architecture
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/06_model_architecture.png" width="750" alt="Model Architecture"/>
+</p>
+
+> **What this shows:** Pie chart of parameter share per component; horizontal bar chart with absolute parameter counts per layer. The output projection dominates at 42.7% owing to the large Urdu vocabulary.
+
+---
+
+## 8️⃣ Section 8 — Training Dynamics
+
+**Configuration:**
 
 | Setting | Value |
 |---|---|
-| Loss | Label-smoothed cross-entropy (ε = 0.1) |
+| Loss function | Label-smoothed cross-entropy (ε = 0.1) |
 | Optimizer | Adam (β₁=0.9, β₂=0.98, ε=1e-8) |
 | Gradient clipping | L2 norm ≤ 1.0 |
 | LR scheduler | ReduceLROnPlateau (factor=0.5, patience=3) |
-| Early stopping | Patience = 7 epochs |
+| Early stopping | patience = 7 epochs |
+| Max epochs | 30 |
 
-**Full training log (best config, retrained from scratch):**
+**Full 17-epoch training log (best config, retrained):**
 
 ```
   Epoch │ Train Loss │  Val Loss │  Val PPL │       LR │  Time
-  ─────────────────────────────────────────────────────────────
+  ─────────────────────────────────────────────────────────────────
       1 │     5.1460 │    4.7228 │   112.48 │ 1.00e-03 │  2.8s  ← BEST ✓
       2 │     4.4642 │    4.2117 │    67.47 │ 1.00e-03 │  2.6s  ← BEST ✓
       3 │     4.1100 │    4.0237 │    55.90 │ 1.00e-03 │  2.6s  ← BEST ✓
@@ -326,31 +456,43 @@ Seq2Seq(
       7 │     3.4349 │    3.7641 │    43.12 │ 1.00e-03 │  2.6s  ← BEST ✓
       8 │     3.3140 │    3.7371 │    41.98 │ 1.00e-03 │  2.6s  ← BEST ✓
       9 │     3.1974 │    3.7295 │    41.66 │ 1.00e-03 │  2.6s  ← BEST ✓
-  ★  10 │     3.0917 │    3.7217 │    41.34 │ 1.00e-03 │  2.7s  ← BEST ✓
+  ★  10 │     3.0917 │    3.7217 │    41.34 │ 1.00e-03 │  2.7s  ← BEST ✓  ← SAVED
      11 │     2.9902 │    3.7284 │    41.61 │ 1.00e-03 │  2.6s
      12 │     2.8940 │    3.7319 │    41.76 │ 1.00e-03 │  2.6s
      13 │     2.8034 │    3.7417 │    42.17 │ 1.00e-03 │  2.6s
      14 │     2.7160 │    3.7436 │    42.25 │ 1.00e-03 │  2.6s
-     15 │     2.5652 │    3.7408 │    42.13 │ 5.00e-04 │  2.8s
+     15 │     2.5652 │    3.7408 │    42.13 │ 5.00e-04 │  2.8s  ← LR halved
      16 │     2.5134 │    3.7495 │    42.50 │ 5.00e-04 │  2.6s
      17 │     2.4694 │    3.7549 │    42.73 │ 5.00e-04 │  2.6s
-  ⏹  Early stopping at epoch 17.
+  ⏹  Early stopping triggered at epoch 17.
 
-  ✅  Best epoch : 10   |   Best val loss : 3.7217   |   Best val PPL : 41.34
-  ⚠️  Generalisation gap at best epoch : 0.63
+  ✅  Best epoch : 10  |  Best val loss : 3.7217  |  Best val PPL : 41.34
+  ⚠️  Generalisation gap at best epoch : 0.63  (moderate overfitting)
 ```
 
-<p align="center">
-  <img src="outputs/plots/07_training_dynamics.png" width="900" alt="Training Dynamics"/>
-</p>
-
-> Train/val loss with generalisation gap shading, perplexity curves, LR schedule, and gradient L2 norm per epoch.
+**Key observations:**
+- Training loss drops monotonically from 5.15 → 2.47 over 17 epochs.
+- Validation loss reaches minimum **3.7217** at epoch 10, then plateaus — classic bottleneck saturation.
+- LR halved once at epoch 15 via ReduceLROnPlateau but yields no further improvement.
+- Gradient norms remain below the 1.0 clip threshold throughout — stable training.
 
 ---
 
-### 9️⃣ Section 9 — Hyperparameter Grid Search
+### 📊 Plot 07 — Training Dynamics
 
-**8 configurations × 8 epochs each.**
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/07_training_dynamics.png" width="950" alt="Training Dynamics"/>
+</p>
+
+> **What this shows:** Train vs validation loss curves with generalisation-gap shading and best-epoch marker; perplexity curves; LR schedule; gradient L2 norm per epoch.
+
+---
+
+## 9️⃣ Section 9 — Hyperparameter Grid Search
+
+**8 configurations × 8 epochs each.** Search space: embedding dim · hidden dim · RNN layers · learning rate · dropout · batch size.
+
+**Full grid search leaderboard:**
 
 | Rank | Emb | Hid | L | LR | Drop | BS | Val Loss | Val PPL | Params |
 |---|---|---|---|---|---|---|---|---|---|
@@ -363,96 +505,158 @@ Seq2Seq(
 | 7 | 256 | 512 | 2 | 1e-3 | 0.3 | 64 | 3.894 | 49.10 | 5,965,566 |
 | 8 | 256 | 512 | 2 | 5e-4 | 0.2 | 64 | 3.913 | 50.06 | 5,965,566 |
 
-> **Key insight:** 1-layer RNN (rank 1) outperforms 2-layer (rank 3) — depth alone does not compensate for vanishing gradients in vanilla RNNs.
+**Optimal hyperparameter configuration:**
 
-<p align="center">
-  <img src="outputs/plots/08_hyperparameter_search.png" width="900" alt="Hyperparameter Search"/>
-</p>
+| Hyperparameter | Search Range | ✅ Optimal |
+|---|---|---|
+| Embedding Dimension | {128, 256} | **256** |
+| Hidden Dimension | {256, 512} | **512** |
+| RNN Layers | {1, 2} | **1** |
+| Learning Rate | {5e-4, 1e-3} | **1e-3** |
+| Dropout | {0.2, 0.3} | **0.2** |
+| Batch Size | {32, 64} | **64** |
 
-> Ranked validation loss bar, parameter count vs loss scatter, validation curves for all 8 configs, and per-hyperparameter effect plots.
+> **Key insight:** 1-layer RNN (rank 1) beats 2-layer (rank 3) — added depth creates more vanishing-gradient pathways without providing the gating benefit of LSTM/GRU.
 
 ---
 
-### 🔟 Section 10 — Inference & BLEU Evaluation
+### 📊 Plot 08 — Hyperparameter Search
 
-Best checkpoint (epoch 10) evaluated on all **855 test sentences**.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/08_hyperparameter_search.png" width="950" alt="Hyperparameter Search"/>
+</p>
 
-**BLEU Scores:**
+> **What this shows:** Ranked validation loss bar chart; parameter count vs validation loss scatter; validation loss curves for all 8 configs across 8 epochs; per-hyperparameter effect bar charts (embedding dim, RNN layers); time–performance trade-off coloured by parameter count.
 
-| Decoding Method | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 | Speed |
-|---|---|---|---|---|---|
-| **Greedy** | **21.026** | **7.420** | **2.573** | 0.903 | 19.7 ms/sent |
-| **Beam (k=4)** | 12.470 | 4.232 | 1.830 | **0.957** | 136.5 ms/sent |
+---
 
-Sentence-level BLEU: Greedy `2.31 ± 1.39` &nbsp;|&nbsp; Beam-4 `1.79 ± 2.04`
+## 🔟 Section 10 — Inference & BLEU Evaluation
 
-**OOD Robustness** (> 31 tokens or ≥ 2 OOV tokens):
+Best checkpoint (epoch 10, val loss = 3.7217) evaluated on all **855 test sentences**.
 
-| Condition | n | BLEU-1 | BLEU-4 | Rel. Drop |
+**Decoding methods:**
+
+| Method | Strategy | Avg Speed |
+|---|---|---|
+| **Greedy** | `argmax` at every step | **19.7 ms / sent** |
+| **Beam (k=4)** | Length-normalised log-prob, α = 0.7 | 136.5 ms / sent *(6.9× slower)* |
+
+**BLEU scores on test set (855 sentences, Chen–Cherry smoothing):**
+
+| Decoding Method | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 |
 |---|---|---|---|---|
-| In-Distribution | 655 | 13.373 | 1.015 | — |
-| OOD | 200 | 9.732 | 0.739 | **−27.2%** |
+| **Greedy** | **21.026** | **7.420** | **2.573** | 0.903 |
+| **Beam (k=4)** | 12.470 | 4.232 | 1.830 | **0.957** |
 
-<p align="center">
-  <img src="outputs/plots/09_bleu_evaluation.png" width="900" alt="BLEU Evaluation"/>
-</p>
+Sentence-level: Greedy `2.31 ± 1.39` &nbsp;·&nbsp; Beam-4 `1.79 ± 2.04`
 
-> Corpus BLEU grouped bar, sentence BLEU density, source length vs BLEU scatter, reference vs hypothesis length, latency box-plots, and sentence BLEU CDF.
+> Greedy achieves higher BLEU-1/2; beam-4 marginally improves BLEU-4 at 6.9× latency cost.
+
+**OOD robustness** (> 31 tokens or ≥ 2 OOV tokens):
+
+| Condition | n | BLEU-1 | BLEU-2 | BLEU-3 | BLEU-4 |
+|---|---|---|---|---|---|
+| In-Distribution | 655 | 13.373 | 4.678 | 2.018 | 1.015 |
+| OOD | 200 | 9.732 | 3.210 | 1.411 | 0.739 |
+| **Drop** | | −3.641 | −1.468 | −0.607 | −0.276 |
+| **Relative drop** | | **−27.2%** | **−31.4%** | **−30.1%** | **−27.2%** |
+
+**Decoding demo (5 samples):**
+
+```
+[1] SRC : and solomon begat roboam and roboam begat abia and abia begat asa
+     REF : اور سلیمان سے رحبعام پیدا ہوا اور رحبعام سے ابیاہ پیدا ہوا اور ابیاہ سے آسا پیدا ہوا
+     BM4 : اس نے ان سے کہا اے خداوند میں تجھ سے کہتا ہوں .
+
+[2] SRC : blessed are the poor in spirit for theirs is the kingdom of heaven
+     REF : مبارک ہیں وہ جو دل کے غریب ہیں کیونکہ آسمان کی بادشاہی ان ہی کی ہے .
+     BM4 : اس نے ان سے کہا اے خداوند میں تجھ سے کہتا ہوں .
+
+[3] SRC : he saith unto them but whom say ye that i am
+     REF : اس نے ان سے کہا مگر تم مجھے کیا کہتے ہو
+     BM4 : اس نے ان سے کہا اے خداوند میں تجھ سے کہتا ہوں .   ← BLEU 28.92 (best)
+```
 
 ---
 
-### 1️⃣1️⃣ Section 11 — Error Analysis & Discussion
+### 📊 Plot 09 — BLEU Evaluation
 
-All 855 beam-4 outputs classified into 8 error categories.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/09_bleu_evaluation.png" width="950" alt="BLEU Evaluation"/>
+</p>
 
-**Error Type Distribution:**
+> **What this shows:** Corpus BLEU-1 to BLEU-4 grouped bar (greedy vs beam-4); sentence BLEU density distribution; source length vs sentence BLEU scatter with trend line; reference vs hypothesis length; decoding latency box-plots; sentence BLEU CDF for both methods.
+
+---
+
+## 1️⃣1️⃣ Section 11 — Error Analysis & Discussion
+
+All 855 beam-4 outputs classified into 8 error categories using automated heuristics validated by manual inspection of 50 samples.
+
+**Error type distribution:**
 
 | Error Type | Count | % | Definition |
 |---|---|---|---|
-| **Complete Hallucination** | **562** | **65.7%** | Zero lexical overlap with reference |
-| Partial Match | 251 | 29.4% | Some content correct but incomplete |
-| Severe Over-generation | 23 | 2.7% | Hypothesis > 200% reference length |
-| Near Miss | 7 | 0.8% | High overlap, minor lexical errors |
-| Poor Reordering | 7 | 0.8% | Correct vocab, wrong word order |
-| Acceptable (BLEU ≥ 20) | 2 | 0.2% | Reasonably correct |
-| Repetition Loop | 2 | 0.2% | Decoder looping same token |
-| Severe Under-generation | 1 | 0.1% | Hypothesis < 30% reference length |
+| 🔴 **Complete Hallucination** | **562** | **65.7%** | Zero lexical overlap with reference |
+| 🟠 Partial Match | 251 | 29.4% | Some content correct but incomplete |
+| 🟡 Severe Over-generation | 23 | 2.7% | Hypothesis > 200% reference length |
+| 🟢 Near Miss | 7 | 0.8% | High overlap, minor lexical errors |
+| 🔵 Poor Reordering | 7 | 0.8% | Correct vocab, wrong word order |
+| ✅ Acceptable (BLEU ≥ 20) | 2 | 0.2% | Reasonably correct |
+| 🔁 Repetition Loop | 2 | 0.2% | Decoder stuck in same-token loop |
+| ⬇️ Severe Under-generation | 1 | 0.1% | Hypothesis < 30% reference length |
 
-**🚨 Dominant Failure: Fixed-Phrase Mode Collapse**
+**🚨 Dominant failure — Fixed-Phrase Mode Collapse (65.7%)**
 
-**65.7%** of all outputs collapse to one single phrase:
+Nearly two-thirds of all outputs collapse to a single fixed phrase:
 
-> اس نے ان سے کہا اے خداوند میں تجھ سے کہتا ہوں . &nbsp;*(He said to them, O Lord, I say to thee.)*
+> **اس نے ان سے کہا اے خداوند میں تجھ سے کہتا ہوں .**
+> *(He said to them, O Lord, I say to thee.)*
 
-This is the maximum-likelihood degenerate solution when the context vector loses source discriminability — a canonical pathology of non-attentive encoder–decoder models.
+This is the maximum-likelihood degenerate solution when the context vector `h_T` carries insufficient discriminative signal for the decoder to distinguish between inputs. It is a canonical symptom of the fixed-size bottleneck in non-attentive models.
 
-**Limitations of Vanilla RNNs:**
+**Top-5 best translations (Beam-4):**
+
+| # | English Source | BLEU | Label |
+|---|---|---|---|
+| 1 | he saith unto them but whom say ye that i am | **28.92** | Acceptable |
+| 2 | and after that they durst not ask him any question at all | 24.79 | Acceptable |
+| 3 | but i have prayed for thee that thy faith fail not | 16.96 | Near Miss |
+| 4 | philip saith unto him lord shew us the father | 16.35 | Near Miss |
+| 5 | and they brought it and he saith unto them | 13.50 | Near Miss |
+
+**Limitations of vanilla RNNs — quantified:**
 
 | Limitation | Root Cause | Empirical Evidence |
 |---|---|---|
-| Vanishing gradients | `tanh` shrinks ∂h/∂h exponentially over time | Val loss plateaus at epoch 10 |
-| Information bottleneck | Entire sentence compressed into 512-D `h_T` | 65.7% mode collapse rate |
-| Poor word-order reordering | No attention to dynamically re-access source | "Poor Reordering" error class |
-| Repetition / degeneration | No coverage mechanism | Repetition Loop errors |
-| OOV sensitivity | Word-level vocab maps rare tokens to `<unk>` | −27.2% OOD BLEU-4 drop |
+| **Vanishing gradients** | `tanh` shrinks ∂h/∂h exponentially with sequence depth | Val loss plateaus hard at epoch 10 |
+| **Information bottleneck** | Entire sentence → single 512-D vector `h_T` | 65.7% mode-collapse; −27.2% OOD BLEU-4 |
+| **Poor word-order reordering** | No attention to re-access source positions | "Poor Reordering" error class |
+| **Repetition / degeneration** | No coverage mechanism | Repetition Loop errors |
+| **OOV sensitivity** | Word-level vocab; rare tokens → `<unk>` | −31.4% OOD BLEU-2 drop |
 
-**Future Improvement Roadmap:**
+**Future improvement roadmap:**
 
-| Priority | Improvement |
-|---|---|
-| 🔴 Short-term | LSTM / GRU cells + bidirectional encoder |
-| 🔴 Short-term | Bahdanau attention mechanism |
-| 🔴 Short-term | BPE / SentencePiece subword tokenisation |
-| 🟡 Medium-term | Full Transformer (Vaswani et al. 2017) |
-| 🟡 Medium-term | Fine-tune mBART-50 for Urdu |
-| 🟢 Data-side | Back-translation, curriculum learning |
-| 🟢 Data-side | Broaden corpus beyond biblical domain |
+| Priority | Improvement | Expected Gain |
+|---|---|---|
+| 🔴 Immediate | LSTM / GRU cells | Address vanishing gradients |
+| 🔴 Immediate | Bidirectional encoder | Richer context representations |
+| 🔴 Immediate | Bahdanau attention | Eliminate bottleneck entirely |
+| 🔴 Immediate | BPE / SentencePiece | Cut OOV rate to < 1% |
+| 🟡 Medium | Full Transformer | State-of-the-art architecture |
+| 🟡 Medium | Fine-tune mBART-50 | Cross-lingual transfer learning |
+| 🟢 Long-term | Back-translation | More diverse training data |
+| 🟢 Long-term | Broader Urdu corpus | Beyond biblical domain bias |
+
+---
+
+### 📊 Plot 10 — Error Analysis
 
 <p align="center">
-  <img src="outputs/plots/10_error_analysis.png" width="900" alt="Error Analysis"/>
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/10_error_analysis.png" width="950" alt="Error Analysis"/>
 </p>
 
-> Error type bar chart, sentence BLEU box-plots per error category, OOV count vs BLEU, ID vs OOD BLEU comparison, and source-length violin plots by error type.
+> **What this shows:** Error type distribution bar chart; sentence BLEU box-plots per error category; OOV count vs sentence BLEU scatter; ID vs OOD BLEU-4 comparison bars; source-length violin plots by error type; hypothesis-length distributions for top-4 error categories.
 
 ---
 
@@ -502,51 +706,54 @@ This is the maximum-likelihood degenerate solution when the context vector loses
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
+### 📊 Plot 11 — Final Dashboard
+
 <p align="center">
-  <img src="outputs/plots/11_final_dashboard.png" width="900" alt="Final Dashboard"/>
+  <img src="https://raw.githubusercontent.com/code-with-idrees/Machine_Translation_RNN/main/outputs/plots/11_final_dashboard.png" width="950" alt="Final Experiment Dashboard"/>
 </p>
 
-> 4-panel summary dashboard: train/val loss curves, corpus BLEU-1 to BLEU-4, sentence BLEU density, and error-type pie chart.
+> **What this shows:** 4-panel consolidated dashboard — train/val loss curves with best-epoch marker; corpus BLEU-1 to BLEU-4 for greedy and beam-4; sentence BLEU density distribution; error-type pie chart.
 
 ---
 
 ## 📁 Generated Artifacts
 
-**`outputs/plots/`**
+**`outputs/plots/`** — 11 PNG figures auto-generated by the notebook
 
 | File | Description |
 |---|---|
-| `01_corpus_exploration.png` | Length histograms, scatter, top-20 tokens |
-| `02_preprocessing_analysis.png` | Filter funnel, script-ratio, before/after |
-| `03_dataset_split.png` | Split proportions, per-split length densities |
-| `04_vocabulary_analysis.png` | Zipf distributions, top-30 bar charts |
+| `01_corpus_exploration.png` | Length histograms, top-token frequencies |
+| `02_preprocessing_analysis.png` | Filter funnel, script-ratio analysis |
+| `03_dataset_split.png` | Split proportions, length densities |
+| `04_vocabulary_analysis.png` | Zipf curves, top-30 tokens |
 | `05_batch_structure.png` | Token-ID heatmap, padding mask |
-| `06_model_architecture.png` | Parameter breakdown pie & bar |
-| `07_training_dynamics.png` | Loss/PPL curves, LR schedule, grad norms |
-| `08_hyperparameter_search.png` | Grid search leaderboard, config curves |
-| `09_bleu_evaluation.png` | BLEU bars, length scatter, CDF, latency |
-| `10_error_analysis.png` | Error bars, BLEU boxplots, OOD comparison |
+| `06_model_architecture.png` | Parameter breakdown |
+| `07_training_dynamics.png` | Loss/PPL/LR/grad-norm curves |
+| `08_hyperparameter_search.png` | Grid search leaderboard & curves |
+| `09_bleu_evaluation.png` | BLEU bars, scatter, CDF, latency |
+| `10_error_analysis.png` | Error taxonomy, OOD comparison |
 | `11_final_dashboard.png` | Consolidated 4-panel summary |
 
-**`outputs/results/`**
+**`outputs/results/`** — CSV reports & pickled objects
 
 | File | Description |
 |---|---|
 | `cleaned_dataset.csv` | 8,542 preprocessed pairs |
-| `train/val/test_split.csv` | Split CSVs |
+| `train_split.csv` / `val_split.csv` / `test_split.csv` | Split CSVs |
 | `src_vocab.pkl` / `tgt_vocab.pkl` | Pickled vocabulary objects |
 | `training_history.csv` | Per-epoch train loss, val loss, PPL, LR |
 | `grid_search_results.csv` | Full grid search leaderboard |
+| `hyperparameter_summary.csv` | Optimal config table |
 | `bleu_scores.csv` | Corpus BLEU-1 through BLEU-4 |
 | `translation_examples.csv` | Per-sentence BLEU + decoded outputs |
 | `error_analysis.csv` | Error category per test sentence |
-| `final_summary.csv` | All key metrics consolidated |
+| `final_summary.csv` | All key metrics in one CSV |
 
 **`outputs/checkpoints/`**
 
 | File | Description |
 |---|---|
-| `best_model.pt` | Checkpoint saved at epoch 10 (val loss = 3.7217) |
+| `best_model.pt` | Best checkpoint — epoch 10, val loss = 3.7217 |
 
 ---
 
@@ -565,5 +772,6 @@ This is the maximum-likelihood degenerate solution when the context vector loses
 ---
 
 <p align="center">
-  Built at <strong>FAST-NUCES Islamabad</strong> · Department of Computer Science
+  Built at <strong>FAST-NUCES Islamabad</strong> · Department of Computer Science<br>
+  <a href="https://github.com/code-with-idrees/Machine_Translation_RNN">github.com/code-with-idrees/Machine_Translation_RNN</a>
 </p>
